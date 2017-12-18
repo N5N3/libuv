@@ -274,48 +274,6 @@ void uv__async_stop(uv_loop_t* loop) {
 }
 
 
-int uv__async_fork(uv_loop_t* loop) {
-  QUEUE queue;
-  QUEUE* q;
-  uv_async_t* h;
-
-  if (loop->async_io_watcher.fd == -1) /* never started */
-    return 0;
-
-  QUEUE_MOVE(&loop->async_handles, &queue);
-  while (!QUEUE_EMPTY(&queue)) {
-    q = QUEUE_HEAD(&queue);
-    h = QUEUE_DATA(q, uv_async_t, queue);
-
-    QUEUE_REMOVE(q);
-    QUEUE_INSERT_TAIL(&loop->async_handles, q);
-
-    /* The state of any thread that set pending is now likely corrupt in this
-     * child because the user called fork, so just clear these flags and move
-     * on. Calling most libc functions after `fork` is declared to be undefined
-     * behavior anyways, unless async-signal-safe, for multithreaded programs
-     * like libuv, and nothing interesting in pthreads is async-signal-safe.
-     */
-    h->pending = 0;
-    /* We just abruptly lost all other threads, so destroy their state too. */
-    h->busy = 0;
-  }
-
-  /* Recreate these, since they still exist, but belong to the wrong pid now. */
-  if (loop->async_wfd != -1) {
-    if (loop->async_wfd != loop->async_io_watcher.fd)
-      uv__close(loop->async_wfd);
-    loop->async_wfd = -1;
-  }
-
-  uv__io_stop(loop, &loop->async_io_watcher, POLLIN);
-  uv__close(loop->async_io_watcher.fd);
-  loop->async_io_watcher.fd = -1;
-
-  return uv__async_start(loop);
-}
-
-
 static void uv__cpu_relax(void) {
 #if defined(__i386__) || defined(__x86_64__)
   __asm__ __volatile__ ("rep; nop" ::: "memory");  /* a.k.a. PAUSE */
