@@ -1019,7 +1019,7 @@ void uv_process_tcp_read_req(uv_loop_t* loop, uv_tcp_t* handle,
           }
         } else {
           /* Connection closed */
-          handle->flags &= ~(UV_HANDLE_READING | UV_HANDLE_READABLE);
+          handle->flags &= ~UV_HANDLE_READING;
           DECREASE_ACTIVE_COUNT(loop, handle);
 
           handle->read_cb((uv_stream_t*)handle, UV_EOF, &buf);
