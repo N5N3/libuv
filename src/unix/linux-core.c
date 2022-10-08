@@ -83,7 +83,7 @@ static void read_speeds(unsigned int numcpus, uv_cpu_info_t* ci);
 static uint64_t read_cpufreq(unsigned int cpunum);
 
 int uv__platform_loop_init(uv_loop_t* loop) {
-  
+
   loop->inotify_fd = -1;
   loop->inotify_watchers = NULL;
 
@@ -811,28 +811,47 @@ uint64_t uv_get_constrained_memory(void) {
   uint64_t high;
   uint64_t max;
   char* p;
+  char* p_end;
 
   if (uv__slurp("/proc/self/cgroup", buf, sizeof(buf)))
     return uv__get_constrained_memory_fallback();
 
   /* In the case of cgroupv2, we'll only have a single entry. */
-  if (memcmp(buf, "0::/", 4))
-    return uv__get_constrained_memory_fallback();
+  if (0 == memcmp(buf, "0::/", 4)) {
+    p = strchr(buf, '\n');
+    if (p != NULL)
+      *p = '\0';
 
-  p = strchr(buf, '\n');
-  if (p != NULL)
-    *p = '\0';
+    p = buf + 4;
 
-  p = buf + 4;
+    snprintf(filename, sizeof(filename), "/sys/fs/cgroup/%s/memory.max", p);
+    max = uv__read_uint64(filename);
 
-  snprintf(filename, sizeof(filename), "/sys/fs/cgroup/%s/memory.max", p);
-  max = uv__read_uint64(filename);
+    snprintf(filename, sizeof(filename), "/sys/fs/cgroup/%s/memory.high", p);
+    high = uv__read_uint64(filename);
+  } else {
+    p = strchr(buf, ':');
+    while (p != NULL && memcmp(p, ":memory:", 8)) {
+      p = strchr(p, '\n');
+      p = strchr(p, ':');
+    }
+    if (p == NULL)
+      return uv__get_constrained_memory_fallback();
+
+    p = p + 8;
+    p_end = strchr(p, '\n');
+    if (p_end != NULL)
+      *p_end = '\0';
+
+    snprintf(filename, sizeof(filename), "/sys/fs/cgroup/memory/%s/memory.limit_in_bytes", p);
+    max = uv__read_uint64(filename);
+
+    snprintf(filename, sizeof(filename), "/sys/fs/cgroup/memory/%s/memory.soft_limit_in_bytes", p);
+    high = uv__read_uint64(filename);
+  }
 
   if (max == 0)
     return uv__get_constrained_memory_fallback();
-
-  snprintf(filename, sizeof(filename), "/sys/fs/cgroup/%s/memory.high", p);
-  high = uv__read_uint64(filename);
 
   if (high == 0)
     return uv__get_constrained_memory_fallback();
