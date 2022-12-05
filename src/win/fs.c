@@ -2250,7 +2250,7 @@ accesscheck_cleanup:
 }
 
 static void build_access_struct(EXPLICIT_ACCESS_W* ea, PSID owner,
-                                TRUSTEE_TYPE user_type, mode_t mode_triplet,
+                                TRUSTEE_TYPE user_type, DWORD mode_triplet,
                                 ACCESS_MODE allow_deny) {
   /*
    * We map the typical POSIX mode bits r/w/x as the Windows
