@@ -453,6 +453,7 @@ TEST_DECLARE   (fs_file_flag_no_buffering)
 TEST_DECLARE   (fs_open_readonly_acl)
 TEST_DECLARE   (fs_fchmod_archive_readonly)
 TEST_DECLARE   (fs_invalid_mkdir_name)
+TEST_DECLARE   (fs_wtf)
 #endif
 TEST_DECLARE   (fs_get_system_error)
 TEST_DECLARE   (strscpy)
@@ -1136,6 +1137,7 @@ TASK_LIST_START
   TEST_ENTRY  (fs_open_readonly_acl)
   TEST_ENTRY  (fs_fchmod_archive_readonly)
   TEST_ENTRY  (fs_invalid_mkdir_name)
+  TEST_ENTRY  (fs_wtf)
 #endif
   TEST_ENTRY  (fs_get_system_error)
   TEST_ENTRY  (strscpy)
