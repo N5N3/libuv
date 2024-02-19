@@ -1073,9 +1073,11 @@ void fs__unlink(uv_fs_t* req) {
   const WCHAR* pathw = req->file.pathw;
   HANDLE handle;
   BY_HANDLE_FILE_INFORMATION info;
+  FILE_DISPOSITION_INFORMATION disposition;
   FILE_DISPOSITION_INFORMATION_EX disposition_ex;
   IO_STATUS_BLOCK iosb;
   NTSTATUS status;
+  DWORD error;
 
   handle = CreateFileW(pathw,
                        FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | DELETE,
@@ -1111,7 +1113,7 @@ void fs__unlink(uv_fs_t* req) {
     /* Read the reparse point and check if it is a valid symlink. If not, don't
      * unlink. */
     if (fs__readlink_handle(handle, NULL, NULL) < 0) {
-      DWORD error = GetLastError();
+      error = GetLastError();
       if (error == ERROR_SYMLINK_NOT_SUPPORTED)
         error = ERROR_ACCESS_DENIED;
       SET_REQ_WIN32_ERROR(req, error);
@@ -1132,7 +1134,7 @@ void fs__unlink(uv_fs_t* req) {
   if (NT_SUCCESS(status)) {
     SET_REQ_SUCCESS(req);
   } else {
-    DWORD error = GetLastError();
+    error = GetLastError();
     if (error == ERROR_NOT_SUPPORTED) {
       /* posix delete not supported so try fallback */
       if (info.dwFileAttributes & FILE_ATTRIBUTE_READONLY) {
@@ -1154,7 +1156,6 @@ void fs__unlink(uv_fs_t* req) {
         }
       }
 
-      FILE_DISPOSITION_INFORMATION disposition;
       /* Try to set the delete flag. */
       disposition.DeleteFile = TRUE;
       status = pNtSetInformationFile(handle,
