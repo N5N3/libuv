@@ -52,6 +52,10 @@
 /* number of attempts to generate a unique directory name before declaring failure */
 #define TMP_MAX 32767
 
+#define FILE_DISPOSITION_DELETE                     0x0001
+#define FILE_DISPOSITION_POSIX_SEMANTICS            0x0002
+#define FILE_DISPOSITION_IGNORE_READONLY_ATTRIBUTE  0x0010
+
 #define INIT(subtype)                                                         \
   do {                                                                        \
     if (req == NULL)                                                          \
@@ -1069,7 +1073,7 @@ void fs__unlink(uv_fs_t* req) {
   const WCHAR* pathw = req->file.pathw;
   HANDLE handle;
   BY_HANDLE_FILE_INFORMATION info;
-  FILE_DISPOSITION_INFORMATION disposition;
+  FILE_DISPOSITION_INFORMATION_EX disposition_ex;
   IO_STATUS_BLOCK iosb;
   NTSTATUS status;
 
@@ -1135,17 +1139,37 @@ void fs__unlink(uv_fs_t* req) {
     }
   }
 
-  /* Try to set the delete flag. */
-  disposition.DeleteFile = TRUE;
+  /* Try posix delete first */
+  disposition_ex.Flags = FILE_DISPOSITION_DELETE | FILE_DISPOSITION_POSIX_SEMANTICS |
+                          FILE_DISPOSITION_IGNORE_READONLY_ATTRIBUTE;
+
   status = pNtSetInformationFile(handle,
                                  &iosb,
-                                 &disposition,
-                                 sizeof disposition,
-                                 FileDispositionInformation);
+                                 &disposition_ex,
+                                 sizeof disposition_ex,
+                                 FileDispositionInformationEx);
   if (NT_SUCCESS(status)) {
     SET_REQ_SUCCESS(req);
   } else {
-    SET_REQ_WIN32_ERROR(req, pRtlNtStatusToDosError(status));
+    DWORD error = GetLastError();
+    if (error == ERROR_NOT_SUPPORTED) {
+      /* posix delete not supported so try fallback */
+      FILE_DISPOSITION_INFORMATION disposition;
+      /* Try to set the delete flag. */
+      disposition.DeleteFile = TRUE;
+      status = pNtSetInformationFile(handle,
+                                    &iosb,
+                                    &disposition,
+                                    sizeof disposition,
+                                    FileDispositionInformation);
+      if (NT_SUCCESS(status)) {
+        SET_REQ_SUCCESS(req);
+      } else {
+        SET_REQ_WIN32_ERROR(req, pRtlNtStatusToDosError(status));
+      }
+    } else {
+      SET_REQ_WIN32_ERROR(req, error);
+    }
   }
 
   CloseHandle(handle);
@@ -1177,7 +1201,7 @@ void fs__mktemp(uv_fs_t* req, uv__fs_mktemp_func func) {
   size_t len;
   uint64_t v;
   char* path;
-  
+
   path = (char*)req->path;
   len = wcslen(req->file.pathw);
   ep = req->file.pathw + len;
@@ -1633,7 +1657,7 @@ INLINE static int fs__stat_handle(HANDLE handle, uv_stat_t* statbuf,
     statbuf->st_mode |= (_S_IREAD | _S_IWRITE) | ((_S_IREAD | _S_IWRITE) >> 3) |
                         ((_S_IREAD | _S_IWRITE) >> 6);
     statbuf->st_nlink = 1;
-    statbuf->st_blksize = 4096;    
+    statbuf->st_blksize = 4096;
     statbuf->st_rdev = FILE_DEVICE_NULL << 16;
     return 0;
   }
