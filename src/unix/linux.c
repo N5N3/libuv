@@ -472,16 +472,7 @@ static int uv__use_io_uring(void) {
   use = atomic_load_explicit(&use_io_uring, memory_order_relaxed);
 
   if (use == 0) {
-    use = uv__kernel_version() >=
-#if defined(__hppa__)
-    /* io_uring first supported on parisc in 6.1, functional in .51 */
-    /* https://lore.kernel.org/all/cb912694-b1fe-dbb0-4d8c-d608f3526905@gmx.de/ */
-    /* 6.1.51 */ 0x060133
-#else
-    /* Older kernels have a bug where the sqpoll thread uses 100% CPU. */
-    /* 5.10.186 */ 0x050ABA
-#endif
-    ? 1 : -1;
+    use = -1; /* default disable uring usage due to https://github.com/libuv/libuv/issues/4323 */
 
     /* But users can still enable it if they so desire. */
     val = getenv("UV_USE_IO_URING");
