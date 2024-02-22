@@ -1124,6 +1124,7 @@ void __unlink_rmdir(uv_fs_t* req, BOOL isrmdir) {
   disposition_ex.Flags = FILE_DISPOSITION_DELETE | FILE_DISPOSITION_POSIX_SEMANTICS |
                           FILE_DISPOSITION_IGNORE_READONLY_ATTRIBUTE;
 
+  printf("Trying posix delete on %ls\n", pathw);
   status = pNtSetInformationFile(handle,
                                  &iosb,
                                  &disposition_ex,
@@ -1134,6 +1135,7 @@ void __unlink_rmdir(uv_fs_t* req, BOOL isrmdir) {
   } else {
     error = pRtlNtStatusToDosError(status);
     if (error == ERROR_NOT_SUPPORTED) {
+      printf("Falling back to non-posix delete for %ls\n", pathw);
       /* posix delete not supported so try fallback */
       if (info.dwFileAttributes & FILE_ATTRIBUTE_READONLY) {
         /* Remove read-only attribute */
