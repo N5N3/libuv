@@ -1098,7 +1098,7 @@ void __unlink_rmdir(uv_fs_t* req, BOOL isrmdir) {
     return;
   }
 
-  if (!isrmdir & info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+  if (!isrmdir & (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
     /* If not explicitly allowed, do not allow deletion of directories, unless
      * it is a symlink. When the path refers to a non-symlink directory, report
      * EPERM as mandated by POSIX.1. */
