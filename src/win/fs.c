@@ -1127,7 +1127,7 @@ void __unlink_rmdir(uv_fs_t* req, BOOL isrmdir) {
   disposition_ex.Flags = FILE_DISPOSITION_DELETE | FILE_DISPOSITION_POSIX_SEMANTICS |
                           FILE_DISPOSITION_IGNORE_READONLY_ATTRIBUTE;
 
-  printf("Trying posix delete on %ls\n", pathw);
+  printf("Posix delete on %ls\n", pathw);
   status = pNtSetInformationFile(handle,
                                  &iosb,
                                  &disposition_ex,
@@ -1141,6 +1141,7 @@ void __unlink_rmdir(uv_fs_t* req, BOOL isrmdir) {
         error == ERROR_INVALID_PARAMETER /* pre Windows 10 error */ ||
         error == ERROR_INVALID_FUNCTION /* pre Windows 10 1607 error */) {
       /* posix delete not supported so try fallback */
+      printf("Falling back to non-posix delete on %ls\n", pathw);
       if (info.dwFileAttributes & FILE_ATTRIBUTE_READONLY) {
         /* Remove read-only attribute */
         FILE_BASIC_INFORMATION basic = { 0 };
