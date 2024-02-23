@@ -1079,11 +1079,13 @@ void __unlink_rmdir(uv_fs_t* req, BOOL isrmdir) {
                        NULL);
 
   if (handle == INVALID_HANDLE_VALUE) {
+    printf("CreateFileW failed with %d\n", GetLastError());
     SET_REQ_WIN32_ERROR(req, GetLastError());
     return;
   }
 
   if (!GetFileInformationByHandle(handle, &info)) {
+    printf("GetFileInformationByHandle failed with %d\n", GetLastError());
     SET_REQ_WIN32_ERROR(req, GetLastError());
     CloseHandle(handle);
     return;
@@ -1103,6 +1105,7 @@ void __unlink_rmdir(uv_fs_t* req, BOOL isrmdir) {
 
     /* Check if it is a reparse point. If it's not, it's a normal directory. */
     if (!(info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+      printf("Not a reparse point\n");
       SET_REQ_WIN32_ERROR(req, ERROR_ACCESS_DENIED);
       CloseHandle(handle);
       return;
