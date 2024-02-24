@@ -1135,6 +1135,11 @@ void __unlink_rmdir(uv_fs_t* req, BOOL isrmdir) {
                                  FileDispositionInformationEx);
   if (NT_SUCCESS(status)) {
     SET_REQ_SUCCESS(req);
+  } else if (status == STATUS_CANNOT_DELETE) {
+    /* Given we set FILE_DISPOSITION_IGNORE_READONLY_ATTRIBUTE
+     * STATUS_CANNOT_DELETE can only mean that there is an existing mapped
+     * view to the file, preventing delete */
+    SET_REQ_WIN32_ERROR(req, STATUS_CANNOT_DELETE);
   } else {
     error = pRtlNtStatusToDosError(status);
     if (error == ERROR_NOT_SUPPORTED /* filesystem does not support posix deletion */ ||
