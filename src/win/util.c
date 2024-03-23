@@ -435,6 +435,9 @@ int uv_get_process_title(char* buffer, size_t size) {
 int uv_clock_gettime(uv_clock_id clock_id, uv_timespec_t* ts) {
   FILETIME ft;
   int64_t t;
+  // Function pointer for GetSystemTimePreciseAsFileTime (available on Windows 8+)
+  static VOID (WINAPI *pGetSystemTimePreciseAsFileTime)(LPFILETIME) = NULL;
+  static int initialized = 0;
 
   if (ts == NULL)
     return UV_EFAULT;
@@ -447,7 +450,21 @@ int uv_clock_gettime(uv_clock_id clock_id, uv_timespec_t* ts) {
       ts->tv_nsec = t % 1000000000;
       return 0;
     case UV_CLOCK_REALTIME:
-      GetSystemTimePreciseAsFileTime(&ft);
+      // One-time initialization to resolve the function pointer
+      if (!initialized) {
+        HMODULE hKernel32 = GetModuleHandleA("kernel32.dll");
+        if (hKernel32) {
+          pGetSystemTimePreciseAsFileTime = (VOID (WINAPI *)(LPFILETIME))
+              GetProcAddress(hKernel32, "GetSystemTimePreciseAsFileTime");
+        }
+        initialized = 1;
+      }
+      // Use high-precision time if available (Windows 8+), otherwise fall back to system time
+      if (pGetSystemTimePreciseAsFileTime != NULL) {
+        pGetSystemTimePreciseAsFileTime(&ft);
+      } else {
+        GetSystemTimeAsFileTime(&ft); // Fallback for Windows 7
+      }
       /* In 100-nanosecond increments from 1601-01-01 UTC because why not? */
       t = (int64_t) ft.dwHighDateTime << 32 | ft.dwLowDateTime;
       /* Convert to UNIX epoch, 1970-01-01. Still in 100 ns increments. */
