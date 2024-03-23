@@ -102,32 +102,32 @@ static void uv__run_pending(uv_loop_t* loop);
 
 
 
-int uv_clock_gettime(uv_clock_id clock_id, uv_timespec_t* ts) {
-  struct timespec t;
-  int r;
+// int uv_clock_gettime(uv_clock_id clock_id, uv_timespec_t* ts) {
+//   struct timespec t;
+//   int r;
 
-  if (ts == NULL)
-    return UV_EFAULT;
+//   if (ts == NULL)
+//     return UV_EFAULT;
 
-  switch (clock_id) {
-    default:
-      return UV_EINVAL;
-    case UV_CLOCK_MONOTONIC:
-      r = clock_gettime(CLOCK_MONOTONIC, &t);
-      break;
-    case UV_CLOCK_REALTIME:
-      r = clock_gettime(CLOCK_REALTIME, &t);
-      break;
-  }
+//   switch (clock_id) {
+//     default:
+//       return UV_EINVAL;
+//     case UV_CLOCK_MONOTONIC:
+//       r = clock_gettime(CLOCK_MONOTONIC, &t);
+//       break;
+//     case UV_CLOCK_REALTIME:
+//       r = clock_gettime(CLOCK_REALTIME, &t);
+//       break;
+//   }
 
-  if (r)
-    return UV__ERR(errno);
+//   if (r)
+//     return UV__ERR(errno);
 
-  ts->tv_sec = t.tv_sec;
-  ts->tv_nsec = t.tv_nsec;
+//   ts->tv_sec = t.tv_sec;
+//   ts->tv_nsec = t.tv_nsec;
 
-  return 0;
-}
+//   return 0;
+// }
 
 
 uint64_t uv_hrtime(void) {

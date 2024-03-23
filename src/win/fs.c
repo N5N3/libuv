@@ -2129,7 +2129,6 @@ static void fs__access(uv_fs_t* req) {
   if (req->fs.info.mode & X_OK) {
     DWORD sdLen = 0, err = 0, tokenAccess = 0, executeAccessRights = 0,
           grantedAccess = 0, privilegesLen = 0;
-    SECURITY_INFORMATION si = NULL;
     PSECURITY_DESCRIPTOR sd = NULL;
     HANDLE hToken = NULL, hImpersonatedToken = NULL;
     GENERIC_MAPPING mapping = { 0xFFFFFFFF };
@@ -2142,7 +2141,7 @@ static void fs__access(uv_fs_t* req) {
      * storing the desired length into `sd_length`.
      * We expect this call to fail with a certain error code.
      */
-     si = OWNER_SECURITY_INFORMATION |
+     SECURITY_INFORMATION si = OWNER_SECURITY_INFORMATION |
           GROUP_SECURITY_INFORMATION |
           DACL_SECURITY_INFORMATION;
     if (GetFileSecurityW(req->file.pathw, si, NULL, 0, &sdLen)) {
@@ -2304,7 +2303,6 @@ static void fs__chmod(uv_fs_t* req) {
        psidNull = NULL, psidCreatorGroup = NULL;
   PSECURITY_DESCRIPTOR pSD = NULL;
   PEXPLICIT_ACCESS_W ea = NULL, pOldEAs = NULL;
-  SECURITY_INFORMATION si = NULL;
   DWORD numGroups = 0, tokenAccess = 0, u_mode = 0, g_mode = 0, o_mode = 0,
         u_deny_mode = 0, g_deny_mode = 0, attr = 0, new_attr = 0;
   HANDLE hToken = NULL, hImpersonatedToken = NULL;
@@ -2329,7 +2327,7 @@ static void fs__chmod(uv_fs_t* req) {
   }
 
   /* Get the old DACL so that we can merge into it */
-  si = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION |
+  SECURITY_INFORMATION si = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION |
        DACL_SECURITY_INFORMATION;
   if (ERROR_SUCCESS != GetNamedSecurityInfoW(req->file.pathw, SE_FILE_OBJECT,
                                              si, &psidOwner, &psidGroup,
