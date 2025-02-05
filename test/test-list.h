@@ -1202,28 +1202,8 @@ TASK_LIST_START
   TEST_ENTRY  (req_type_name)
   TEST_ENTRY  (getters_setters)
 
-<<<<<<< HEAD
-=======
-#ifndef _WIN32
-  TEST_ENTRY  (fork_timer)
-  TEST_ENTRY  (fork_socketpair)
-  TEST_ENTRY  (fork_socketpair_started)
-  TEST_ENTRY  (fork_signal_to_child)
-  TEST_ENTRY  (fork_signal_to_child_closed)
-  TEST_ENTRY  (fork_close_signal_in_child)
-#ifndef __APPLE__
-  TEST_ENTRY  (fork_fs_events_child)
-  TEST_ENTRY  (fork_fs_events_child_dir)
-  TEST_ENTRY  (fork_fs_events_file_parent_child)
-#endif
-#ifndef __MVS__
-  TEST_ENTRY  (fork_threadpool_queue_work_simple)
-#endif
-#endif
-
   TEST_ENTRY  (iouring_pollhup)
 
->>>>>>> 3ecce914... linux: don't delay EPOLL_CTL_DEL operations (#4328)
   TEST_ENTRY  (utf8_decode1)
   TEST_ENTRY  (utf8_decode1_overrun)
   TEST_ENTRY  (uname)
